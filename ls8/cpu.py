@@ -1,6 +1,9 @@
 """CPU functionality."""
 
 import sys
+LDI = 0b10000010
+PRN = 0b001000111
+HLT = 0b00000001
 
 
 class CPU:
@@ -70,4 +73,4 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        running = True
