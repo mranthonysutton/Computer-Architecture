@@ -21,26 +21,43 @@ class CPU:
     def ram_write(self, mar, mdr):
         self.ram[mar] = mdr
 
-    def load(self):
+    def load(self, filename):
         """Load a program into memory."""
 
         address = 0
 
+        try:
+            with open(filename) as f:
+                for line in f:
+                    line = line.split('#')
+                    line = line[0].strip()
+
+                    if line == "":
+                        continue
+
+                    value = int(line, 2)
+                    self.ram[address] = value
+
+                    address += 1
+        except FileNotFoundError:
+            print("File not found...")
+            sys.exit()
+
         # For now, we've just hardcoded a program:
 
-        program = [
-            # From print8.ls8
-            0b10000010,  # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111,  # PRN R0
-            0b00000000,
-            0b00000001,  # HLT
-        ]
-
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+        # program = [
+        #     # From print8.ls8
+        #     0b10000010,  # LDI R0,8
+        #     0b00000000,
+        #     0b00001000,
+        #     0b01000111,  # PRN R0
+        #     0b00000000,
+        #     0b00000001,  # HLT
+        # ]
+        #
+        # for instruction in program:
+        #     self.ram[address] = instruction
+        #     address += 1
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -93,3 +110,5 @@ class CPU:
             else:
                 print("Invalid instruction command...")
                 running = False
+                sys.exit()
+
