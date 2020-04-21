@@ -12,7 +12,7 @@ class CPU:
     def __init__(self):
         """Construct a new CPU."""
         self.ram = [0b0] * 0b100000000  # 256 in binary
-        self.mar = [0b0] * 0b1000  # 8 in binary
+        self.reg = [0b0] * 0b1000  # 8 in binary
         self.pc = 0b0  # 0 in binary
 
     def ram_read(self, mar):
@@ -74,3 +74,22 @@ class CPU:
     def run(self):
         """Run the CPU."""
         running = True
+
+        while running:
+
+            instruction = self.ram[self.pc]
+            operand_a = self.ram[self.pc + 1]
+            operand_b = self.ram[self.pc + 2]
+
+            # Check how much to add to PC depending on code
+            if instruction == PRN:
+                print(self.reg[operand_a])
+                self.pc += 2
+            elif instruction == LDI:
+                self.reg[operand_a] = operand_b
+                self.pc += 3
+            elif instruction == HLT:
+                running = False
+            else:
+                print("Invalid instruction command...")
+                running = False
