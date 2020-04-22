@@ -15,11 +15,42 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
+
+        # Dispatch table
+        self.dispatch_table = {LDI: self.handle_ldi, PRN: self.handle_prn, HLT: self.handle_hlt, MUL: self.handle_mul,
+                               PUSH: self.handle_push, POP: self.handle_pop}
+
         self.ram = [0b0] * 0b100000000  # 256 in binary
         self.reg = [0b0] * 0b1000  # 8 in binary
         self.pc = 0b0  # 0 in binary
-        self.SP = 7 # R7 is reservered for the pointer to the stack
-        self.reg[self.SP] = 0xF4 # pointer to the correct index on RAM
+        self.stack_pointer = 7  # R7 is reservered for the pointer to the stack
+        self.reg[self.stack_pointer] = 0xF4  # pointer to the correct index on RAM
+
+    def handle_ldi(self, *argv):
+        self.reg[argv[0]] = argv[1]
+        self.pc += 3
+
+    def handle_prn(self, *argv):
+        print(self.reg[argv[0]])
+        self.pc += 2
+
+    def handle_hlt(self, *argv):
+        sys.exit()
+
+    def handle_mul(self, *argv):
+        self.alu('MUL', argv[0], argv[1])
+        self.pc += 3
+
+    def handle_push(self, *argv):
+        self.reg[self.stack_pointer] -= 1
+        self.ram[self.reg[self.stack_pointer]] = self.reg[argv[0]]
+        self.pc += 2
+
+    def handle_pop(self, *argv):
+        copy_stack = self.ram[self.reg[self.stack_pointer]]
+        self.reg[argv[0]] = copy_stack
+        self.reg[self.stack_pointer] += 1
+        self.pc += 2
 
     def ram_read(self, mar):
         return self.ram[mar]
@@ -84,33 +115,12 @@ class CPU:
         running = True
 
         while running:
-
             instruction = self.ram[self.pc]
-            operand_a = self.ram[self.pc + 1]
-            operand_b = self.ram[self.pc + 2]
+            operand_a = self.ram_read(self.pc + 1)
+            operand_b = self.ram_read(self.pc + 2)
 
-            # Check how much to add to PC depending on code
-            if instruction == PRN:
-                print(self.reg[operand_a])
-                self.pc += 2
-            elif instruction == LDI:
-                self.reg[operand_a] = operand_b
-                self.pc += 3
-            elif instruction == HLT:
-                running = False
-            elif instruction == MUL:
-                self.alu('MUL', operand_a, operand_a)
-                self.pc += 3
-            elif instruction == POP:
-                value = self.ram[self.reg[self.SP]]
-                self.reg[operand_a] = value
-                self.reg[self.SP] += 1
-                self.pc += 2
-            elif instruction == PUSH:
-                self.reg[self.SP] -= 1
-                self.ram[self.reg[self.SP]] = self.reg[operand_a]
-                self.pc += 2
+            if instruction in self.dispatch_table:
+                self.dispatch_table[instruction](operand_a, operand_b)
             else:
-                print("Invalid instruction command...")
-                running = False
+                print('Invalid instruction...')
                 sys.exit()
