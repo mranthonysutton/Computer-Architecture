@@ -6,6 +6,8 @@ LDI = 0b10000010
 PRN = 0b001000111
 HLT = 0b00000001
 MUL = 0b10100010
+PUSH = 0b01000101
+POP = 0b01000110
 
 
 class CPU:
@@ -16,6 +18,8 @@ class CPU:
         self.ram = [0b0] * 0b100000000  # 256 in binary
         self.reg = [0b0] * 0b1000  # 8 in binary
         self.pc = 0b0  # 0 in binary
+        self.SP = 7 # R7 is reservered for the pointer to the stack
+        self.reg[self.SP] = 0xF4 # pointer to the correct index on RAM
 
     def ram_read(self, mar):
         return self.ram[mar]
@@ -97,6 +101,15 @@ class CPU:
             elif instruction == MUL:
                 self.alu('MUL', operand_a, operand_a)
                 self.pc += 3
+            elif instruction == POP:
+                value = self.ram[self.reg[self.SP]]
+                self.reg[operand_a] = value
+                self.reg[self.SP] += 1
+                self.pc += 2
+            elif instruction == PUSH:
+                self.reg[self.SP] -= 1
+                self.ram[self.reg[self.SP]] = self.reg[operand_a]
+                self.pc += 2
             else:
                 print("Invalid instruction command...")
                 running = False
