@@ -6,8 +6,11 @@ LDI = 0b10000010
 PRN = 0b001000111
 HLT = 0b00000001
 MUL = 0b10100010
+ADD = 0b10100000
 PUSH = 0b01000101
 POP = 0b01000110
+CALL = 0b01010000
+RET = 0b00010001
 
 
 class CPU:
@@ -18,13 +21,16 @@ class CPU:
 
         # Dispatch table
         self.dispatch_table = {LDI: self.handle_ldi, PRN: self.handle_prn, HLT: self.handle_hlt, MUL: self.handle_mul,
-                               PUSH: self.handle_push, POP: self.handle_pop}
+                               ADD: self.handle_add, PUSH: self.handle_push, POP: self.handle_pop,
+                               CALL: self.handle_call, RET: self.handle_ret}
 
         self.ram = [0b0] * 0b100000000  # 256 in binary
         self.reg = [0b0] * 0b1000  # 8 in binary
         self.pc = 0b0  # 0 in binary
         self.stack_pointer = 7  # R7 is reservered for the pointer to the stack
-        self.reg[self.stack_pointer] = 0xF4  # pointer to the correct index on RAM
+        # pointer to the correct index on RAM
+        self.reg[self.stack_pointer] = 0xF4
+        self.running = False
 
     def handle_ldi(self, *argv):
         self.reg[argv[0]] = argv[1]
@@ -35,10 +41,15 @@ class CPU:
         self.pc += 2
 
     def handle_hlt(self, *argv):
-        sys.exit()
+        self.running = False
+        self.pc += 1
 
     def handle_mul(self, *argv):
         self.alu('MUL', argv[0], argv[1])
+        self.pc += 3
+
+    def handle_add(self, *argv):
+        self.alu("ADD", argv[0], argv[1])
         self.pc += 3
 
     def handle_push(self, *argv):
@@ -51,6 +62,17 @@ class CPU:
         self.reg[argv[0]] = copy_stack
         self.reg[self.stack_pointer] += 1
         self.pc += 2
+
+    def handle_call(self, *argv):
+        self.reg[self.stack_pointer] -= 1
+        self.ram[self.reg[self.stack_pointer]] = self.pc + 2
+
+        new_reg = self.ram[self.pc + 1]
+        self.pc = self.reg[new_reg]
+
+    def handle_ret(self, *argv):
+        self.pc = self.ram[self.reg[self.stack_pointer]]
+        self.reg[self.stack_pointer] += 1
 
     def ram_read(self, mar):
         return self.ram[mar]
@@ -112,9 +134,9 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        running = True
+        self.running = True
 
-        while running:
+        while self.running:
             instruction = self.ram[self.pc]
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
