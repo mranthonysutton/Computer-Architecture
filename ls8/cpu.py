@@ -16,6 +16,13 @@ JMP = 0b01010100
 JNE = 0b01010110
 JEQ = 0b01010101
 ADDI = 0b10101110
+AND = 0b10101000
+OR = 0b10101010
+XOR = 0b10101011
+NOT = 0b01101001
+SHL = 0b10101100
+SHR = 0b10101101
+MOD = 0b10100100
 
 
 class CPU:
@@ -28,7 +35,9 @@ class CPU:
         self.dispatch_table = {LDI: self.handle_ldi, PRN: self.handle_prn, HLT: self.handle_hlt, MUL: self.handle_mul,
                                ADD: self.handle_add, PUSH: self.handle_push, POP: self.handle_pop,
                                CALL: self.handle_call, RET: self.handle_ret, CMP: self.handle_cmp,
-                               JMP: self.handle_jmp, JNE: self.handle_jne, JEQ: self.handle_jeq, ADDI: self.handle_addi}
+                               JMP: self.handle_jmp, JNE: self.handle_jne, JEQ: self.handle_jeq, ADDI: self.handle_addi,
+                               AND: self.handle_and, OR: self.handle_or, XOR: self.handle_xor, NOT: self.handle_not,
+                               SHL: self.handle_shl, SHR: self.handle_shr, MOD: self.handle_mod}
 
         self.ram = [0b0] * 0b100000000  # 256 in binary
         self.reg = [0b0] * 0b1000  # 8 in binary for the register
@@ -104,6 +113,34 @@ class CPU:
         self.alu('ADDI', argv[0], argv[1])
         self.pc += 3
 
+    def handle_and(self, *argv):
+        self.alu("AND", argv[0], argv[1])
+        self.pc += 3
+
+    def handle_or(self, *argv):
+        self.alu("OR", argv[0], argv[1])
+        self.pc += 3
+
+    def handle_xor(self, *argv):
+        self.alu("XOR", argv[0], argv[1])
+        self.pc += 3
+
+    def handle_not(self, *argv):
+        self.alu("NOT", argv[0], argv[1])
+        self.pc += 3
+
+    def handle_shl(self, *argv):
+        self.alu("SHL", argv[0], argv[1])
+        self.pc += 3
+
+    def handle_shr(self, *argv):
+        self.alu("SHR", argv[0], argv[1])
+        self.pc += 3
+
+    def handle_mod(self, *argv):
+        self.alu("MOD", argv[0], argv[1])
+        self.pc += 3
+
     def ram_read(self, mar):
         return self.ram[mar]
 
@@ -154,6 +191,23 @@ class CPU:
                 self.FL[-3] = 1
         elif op == "ADDI":
             self.reg[reg_a] += reg_b
+        elif op == "AND":
+            self.reg[reg_a] &= self.reg[reg_b]
+        elif op == "OR":
+            self.reg[reg_a] |= self.reg[reg_b]
+        elif op == "XOR":
+            self.reg[reg_a] ^= self.reg[reg_b]
+        elif op == "NOT":
+            self.reg[reg_a] = ~self.reg[reg_b]
+        elif op == "SHL":
+            self.reg[reg_a] <<= self.reg[reg_b]
+        elif op == "SHR":
+            self.reg[reg_a] >>= self.reg[reg_b]
+        elif op == "MOD":
+            if reg_b == 0:
+                raise Exception("You can not divide by 0")
+            else:
+                self.reg[reg_a] %= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
