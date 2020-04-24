@@ -15,6 +15,7 @@ CMP = 0b10100111
 JMP = 0b01010100
 JNE = 0b01010110
 JEQ = 0b01010101
+ADDI = 0b10101110
 
 
 class CPU:
@@ -27,16 +28,16 @@ class CPU:
         self.dispatch_table = {LDI: self.handle_ldi, PRN: self.handle_prn, HLT: self.handle_hlt, MUL: self.handle_mul,
                                ADD: self.handle_add, PUSH: self.handle_push, POP: self.handle_pop,
                                CALL: self.handle_call, RET: self.handle_ret, CMP: self.handle_cmp,
-                               JMP: self.handle_jmp, JNE: self.handle_jne, JEQ: self.handle_jeq}
+                               JMP: self.handle_jmp, JNE: self.handle_jne, JEQ: self.handle_jeq, ADDI: self.handle_addi}
 
         self.ram = [0b0] * 0b100000000  # 256 in binary
         self.reg = [0b0] * 0b1000  # 8 in binary for the register
         self.pc = 0b0  # 0 in binary for the pc
-        self.stack_pointer = 7  # R7 is reservered for the pointer to the stack
+        self.stack_pointer = 0b111  # R7 is reservered for the pointer to the stack
         # pointer to the correct index on RAM
         self.reg[self.stack_pointer] = 0xF4
         self.running = False
-        self.FL = [0b0] * 0b1000 # 8 in binary for the flag
+        self.FL = [0b0] * 0b1000  # 8 in binary for the flag
 
     def handle_ldi(self, *argv):
         self.reg[argv[0]] = argv[1]
@@ -99,6 +100,10 @@ class CPU:
         else:
             self.pc += 2
 
+    def handle_addi(self, *argv):
+        self.alu('ADDI', argv[0], argv[1])
+        self.pc += 3
+
     def ram_read(self, mar):
         return self.ram[mar]
 
@@ -147,6 +152,8 @@ class CPU:
                 self.FL[-1] = 0
                 self.FL[-2] = 0
                 self.FL[-3] = 1
+        elif op == "ADDI":
+            self.reg[reg_a] += reg_b
         else:
             raise Exception("Unsupported ALU operation")
 
